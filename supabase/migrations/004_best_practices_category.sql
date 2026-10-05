@@ -1,0 +1,1 @@
+alter type audit_category add value if not exists 'best_practices';

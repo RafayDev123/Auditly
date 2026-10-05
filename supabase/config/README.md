@@ -1,0 +1,2 @@
+This folder is reserved for Supabase CLI config files (if you choose to wire Supabase CLI workflows).
+Current setup uses SQL migrations in `supabase/migrations` and manual or scripted `psql` execution.
