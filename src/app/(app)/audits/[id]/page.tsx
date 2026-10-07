@@ -124,7 +124,9 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
               }}
             />
           ) : null}
-          <RescanButton auditId={audit[0].id} />
+          {audit[0].status !== "queued" && audit[0].status !== "running" ? (
+            <RescanButton auditId={audit[0].id} />
+          ) : null}
         </div>
       </header>
 

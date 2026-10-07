@@ -1,9 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { db } from "@/db";
 import { audits } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth/session";
 import { initializeAuditStages, runAuditJob } from "@/services/audit-runner";
+
+export const maxDuration = 60;
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -29,7 +32,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     .returning({ id: audits.id });
 
   await initializeAuditStages(inserted[0].id);
-  void runAuditJob(inserted[0].id);
+  after(() => runAuditJob(inserted[0].id));
 
   return NextResponse.json({ id: inserted[0].id });
 }

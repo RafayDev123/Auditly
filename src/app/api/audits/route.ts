@@ -1,11 +1,14 @@
 import { and, desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { audits, websites } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth/session";
 import { validatePublicTarget } from "@/lib/url";
 import { initializeAuditStages, runAuditJob } from "@/services/audit-runner";
+
+export const maxDuration = 60;
 
 const createAuditSchema = z.object({
   url: z.string().min(8),
@@ -95,7 +98,7 @@ export async function POST(req: Request) {
 
   await initializeAuditStages(inserted[0].id);
 
-  void runAuditJob(inserted[0].id);
+  after(() => runAuditJob(inserted[0].id));
 
   return NextResponse.json({ id: inserted[0].id }, { status: 201 });
 }
