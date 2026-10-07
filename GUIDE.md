@@ -172,10 +172,12 @@ Recommended: Vercel + Supabase Postgres
 - Set environment variables from `.env.example`
 - Ensure `NEXT_PUBLIC_APP_URL` matches production domain
 - Apply migrations before first production run
+- For Vercel, set `DATABASE_URL` to the Transaction pooler URI copied from the existing Supabase project's **Connect** dialog. Use the supplied host, port, and username exactly; do not construct the pooler hostname manually. Add the database password in Vercel's Production environment variables, then redeploy.
+- After deployment, verify `/api/health` returns `{"ok":true}`.
 
 ## 12) Troubleshooting
 
-- **Database connection failure**: verify `DATABASE_URL`
+- **Database connection failure**: verify `DATABASE_URL`; on Vercel, use the Supabase Transaction pooler URI copied from **Connect**. An `ENOTFOUND` error for `db.<project-ref>.supabase.co` means the direct database hostname cannot be resolved from the deployment environment.
 - **Auth redirect issue**: verify `NEXT_PUBLIC_APP_URL`
 - **RLS permission issue**: review policies in migration 002
 - **Reset password not working**: token may be expired or already used
