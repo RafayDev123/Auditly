@@ -42,7 +42,11 @@ export function CommandMenu() {
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 grid place-items-start bg-black/50 p-4 pt-24" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 grid place-items-start bg-black/50 p-4 pt-24"
+          role="dialog"
+          aria-modal="true"
+        >
           <Card className="w-full max-w-xl">
             <div className="space-y-2">
               {commands.map(([label, href]) => (
@@ -55,7 +59,10 @@ export function CommandMenu() {
                   {label}
                 </Link>
               ))}
-              <button className="mt-2 text-xs text-[var(--muted-foreground)]" onClick={() => setOpen(false)}>
+              <button
+                className="mt-2 text-xs text-[var(--muted-foreground)]"
+                onClick={() => setOpen(false)}
+              >
                 Close
               </button>
             </div>
