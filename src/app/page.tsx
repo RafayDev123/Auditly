@@ -105,7 +105,7 @@ export default function HomePage() {
 
       <section id="how-it-works" className="mx-auto w-full max-w-7xl px-4 py-10 md:px-8">
         <h2 className="text-2xl font-semibold">How it works</h2>
-        <ol className="mt-5 grid gap-4 md:grid-cols-5">
+        <ol className="mt-5 grid list-none gap-4 md:grid-cols-5">
           {[
             "Enter URL",
             "Validate target",
@@ -113,10 +113,10 @@ export default function HomePage() {
             "Compute deterministic scores",
             "Get prioritized recommendations",
           ].map((step, index) => (
-            <Card key={step} className="p-4">
+            <li key={step} className="surface p-4 shadow-[var(--shadow-sm)]">
               <p className="mono text-xs text-[var(--muted-foreground)]">0{index + 1}</p>
               <p className="mt-2 text-sm font-medium">{step}</p>
-            </Card>
+            </li>
           ))}
         </ol>
       </section>

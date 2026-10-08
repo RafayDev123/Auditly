@@ -71,7 +71,7 @@ export function RegisterForm() {
         </div>
       </div>
 
-      {error ? <p className="text-sm text-rose-400">{error}</p> : null}
+      {error ? <p className="text-sm text-[var(--danger-foreground)]">{error}</p> : null}
 
       <Button className="w-full" disabled={loading}>
         {loading ? "Creating account…" : "Create account"}

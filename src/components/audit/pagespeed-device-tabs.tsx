@@ -127,13 +127,13 @@ export function PageSpeedDeviceTabs({
                 <h4 className="text-sm font-semibold">{recommendation.title}</h4>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[var(--muted-foreground)]">{recommendation.category}</span>
-                  <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-400">
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--warning-foreground)_12%,transparent)] px-2 py-1 text-xs font-medium text-[var(--warning-foreground)]">
                     Needs improvement
                   </span>
                 </div>
               </div>
               {recommendation.finalHost && recommendation.finalHost !== domain ? (
-                <p className="mt-2 text-xs text-amber-400">
+                <p className="mt-2 text-xs text-[var(--warning-foreground)]">
                   Lighthouse followed a redirect and analyzed {recommendation.finalHost}.
                 </p>
               ) : null}

@@ -13,7 +13,6 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDateTime } from "@/lib/utils";
 import { AuditProgress } from "@/components/audit/audit-progress";
 import { RescanButton } from "@/components/audit/rescan-button";
-import { PageSpeedScoreChart } from "@/components/audit/pagespeed-score-chart";
 import { PageSpeedDeviceTabs } from "@/components/audit/pagespeed-device-tabs";
 import { PageSpeedAutoRefresh } from "@/components/audit/pagespeed-auto-refresh";
 import { DownloadReportButton } from "@/components/audit/download-report-button";
@@ -181,11 +180,10 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
           </p>
         ) : null}
         {pageSpeedWarning ? (
-          <p className="mt-3 text-sm text-amber-400" role="status">
+          <p className="mt-3 text-sm text-[var(--warning-foreground)]" role="status">
             {pageSpeedWarning}
           </p>
         ) : null}
-        <PageSpeedScoreChart data={lighthouseScoreData} />
         <PageSpeedDeviceTabs
           scores={lighthouseScoreData}
           metrics={deviceMetrics}

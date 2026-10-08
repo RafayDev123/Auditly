@@ -44,8 +44,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
       <Button className="w-full" disabled={loading}>
         {loading ? "Resetting…" : "Reset password"}
       </Button>
-      {error ? <p className="text-sm text-rose-400">{error}</p> : null}
-      {message ? <p className="text-sm text-emerald-400">{message}</p> : null}
+      {error ? <p className="text-sm text-[var(--danger-foreground)]">{error}</p> : null}
+      {message ? <p className="text-sm text-[var(--success-foreground)]">{message}</p> : null}
     </form>
   );
 }

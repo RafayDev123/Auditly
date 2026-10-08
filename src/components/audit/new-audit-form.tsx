@@ -57,7 +57,7 @@ export function NewAuditForm() {
           <p>Deep crawl: Disabled by default</p>
         </div>
 
-        {error ? <p className="text-sm text-rose-400">{error}</p> : null}
+        {error ? <p className="text-sm text-[var(--danger-foreground)]">{error}</p> : null}
 
         <Button disabled={loading}>{loading ? "Starting audit…" : "Start audit"}</Button>
       </form>

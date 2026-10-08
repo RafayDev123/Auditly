@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Download } from "lucide-react";
-import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 
 type ReportData = {
@@ -39,10 +38,11 @@ function formatDate(value: string) {
 export function DownloadReportButton({ report }: { report: ReportData }) {
   const [loading, setLoading] = useState(false);
 
-  function downloadReport() {
+  async function downloadReport() {
     setLoading(true);
 
     try {
+      const { jsPDF } = await import("jspdf");
       const document = new jsPDF();
       const pageWidth = document.internal.pageSize.getWidth();
       const pageHeight = document.internal.pageSize.getHeight();

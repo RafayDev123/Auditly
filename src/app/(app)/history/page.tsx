@@ -33,7 +33,11 @@ export default async function HistoryPage() {
                 </Link>
                 <div className="flex items-center gap-3">
                   <span className="mono">{item.overallScore ?? "—"}</span>
-                  {delta !== null ? <span className={delta >= 0 ? "text-emerald-400" : "text-rose-400"}>{delta >= 0 ? `+${delta}` : delta}</span> : null}
+                  {delta !== null ? (
+                    <span className={delta >= 0 ? "text-[var(--success-foreground)]" : "text-[var(--danger-foreground)]"}>
+                      {delta >= 0 ? `+${delta}` : delta}
+                    </span>
+                  ) : null}
                 </div>
               </li>
             );
