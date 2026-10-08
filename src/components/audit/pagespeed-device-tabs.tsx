@@ -19,7 +19,6 @@ type Recommendation = {
   category: string;
   strategy: string;
   title: string;
-  score: number | null;
   displayValue: string;
   recommendation: string;
   finalHost: string | null;
@@ -115,6 +114,9 @@ export function PageSpeedDeviceTabs({
         )}
 
         <h3 className="mt-6 text-sm font-semibold">Issues and how to fix them</h3>
+        <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+          These are individual failed checks. Their status is separate from the category scores shown above.
+        </p>
         <div className="mt-3 space-y-3">
           {deviceRecommendations.map((recommendation, index) => (
             <article
@@ -123,9 +125,12 @@ export function PageSpeedDeviceTabs({
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <h4 className="text-sm font-semibold">{recommendation.title}</h4>
-                <span className="mono text-xs text-[var(--muted-foreground)]">
-                  {recommendation.category} · {recommendation.score ?? "—"}/100
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[var(--muted-foreground)]">{recommendation.category}</span>
+                  <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-400">
+                    Needs improvement
+                  </span>
+                </div>
               </div>
               {recommendation.finalHost && recommendation.finalHost !== domain ? (
                 <p className="mt-2 text-xs text-amber-400">
