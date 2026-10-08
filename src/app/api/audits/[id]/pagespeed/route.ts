@@ -5,6 +5,8 @@ import { auditMetrics, auditStages, audits } from "@/db/schema";
 import { getSessionUser } from "@/lib/auth/session";
 import { PAGESPEED_COMPLETION_KEYS, runPageSpeedAnalysis } from "@/lib/pagespeed";
 
+export const maxDuration = 60;
+
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -85,10 +87,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     });
 
     return NextResponse.json({ complete, warning: result.warning ?? null });
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unexpected PageSpeed error.";
+    console.error("Google PageSpeed refresh failed", { auditId: id, error: message });
     await db
       .update(auditStages)
-      .set({ status: "failed", details: "Google PageSpeed refresh failed.", updatedAt: new Date() })
+      .set({ status: "failed", details: message, updatedAt: new Date() })
       .where(eq(auditStages.id, claim[0].id));
     return NextResponse.json({ error: "Google PageSpeed refresh failed." }, { status: 502 });
   }

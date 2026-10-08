@@ -14,6 +14,7 @@ import { formatDateTime } from "@/lib/utils";
 import { AuditProgress } from "@/components/audit/audit-progress";
 import { RescanButton } from "@/components/audit/rescan-button";
 import { PageSpeedScoreChart } from "@/components/audit/pagespeed-score-chart";
+import { PageSpeedDeviceTabs } from "@/components/audit/pagespeed-device-tabs";
 import { PageSpeedAutoRefresh } from "@/components/audit/pagespeed-auto-refresh";
 import { DownloadReportButton } from "@/components/audit/download-report-button";
 import { PAGESPEED_COMPLETION_KEYS } from "@/lib/pagespeed";
@@ -48,7 +49,10 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
   const fieldMetrics = googleMetrics.filter((metric) => metric.source === "crux-field");
   const googleSuggestions = lighthouseMetrics.filter((metric) => metric.metricKey.includes("_suggestion_"));
   const googleReportMetrics = googleMetrics.filter(
-    (metric) => !metric.metricKey.includes("_suggestion_") && !metric.metricKey.endsWith("_scan_complete"),
+    (metric) =>
+      !metric.metricKey.includes("_suggestion_") &&
+      !metric.metricKey.endsWith("_scan_complete") &&
+      !metric.metricKey.endsWith("_diagnostics_complete"),
   );
   const pageSpeedWarning = stages.find((stage) => stage.stageKey === "performance")?.details;
   const lighthouseCategories = [
@@ -64,6 +68,15 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
   }));
   const savedGoogleKeys = new Set(lighthouseMetrics.map((metric) => metric.metricKey));
   const needsGoogleRefresh = PAGESPEED_COMPLETION_KEYS.some((key) => !savedGoogleKeys.has(key));
+  function hostnameFromUrl(value: unknown) {
+    if (typeof value !== "string") return null;
+    try {
+      return new URL(value).hostname;
+    } catch {
+      return null;
+    }
+  }
+
   const googleRecommendationData = googleSuggestions.map((metric) => {
     const categoryId = metric.evidence?.category;
     const categoryLabel = lighthouseCategories.find((category) => category.id === categoryId)?.label ?? "Lighthouse";
@@ -78,6 +91,9 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
         typeof metric.evidence?.recommendation === "string"
           ? metric.evidence.recommendation
           : "Review this audit in Google PageSpeed Insights for details.",
+      finalHost: hostnameFromUrl(metric.evidence?.finalUrl),
+      diagnosticDetails:
+        typeof metric.evidence?.diagnosticDetails === "string" ? metric.evidence.diagnosticDetails : null,
     };
   });
 
@@ -87,13 +103,19 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
     return `${value}${metric.unit ? ` ${metric.unit}` : ""}`;
   }
 
-  function metricSource(metric: (typeof metrics)[number]) {
-    if (metric.source === "pagespeed-lab") {
-      const strategy = metric.evidence?.strategy;
-      return `Google Lighthouse${typeof strategy === "string" ? ` (${strategy})` : ""}`;
-    }
-    return "Google CrUX real-user data";
-  }
+  const deviceMetrics = {
+    mobile: googleReportMetrics
+      .filter((metric) => metric.source === "pagespeed-lab" && metric.metricKey.startsWith("psi_mobile_"))
+      .map((metric) => ({ id: metric.id, label: metric.metricLabel, value: metricValue(metric) })),
+    desktop: googleReportMetrics
+      .filter((metric) => metric.source === "pagespeed-lab" && metric.metricKey.startsWith("psi_desktop_"))
+      .map((metric) => ({ id: metric.id, label: metric.metricLabel, value: metricValue(metric) })),
+  };
+  const fieldMetricRows = fieldMetrics.map((metric) => ({
+    id: metric.id,
+    label: metric.metricLabel,
+    value: metricValue(metric),
+  }));
 
   return (
     <div className="space-y-6">
@@ -118,7 +140,10 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
                   label: metric.metricLabel,
                   value: metric.numericValue,
                   unit: metric.unit ?? "",
-                  source: metricSource(metric),
+                  source:
+                    metric.source === "pagespeed-lab"
+                      ? `Google Lighthouse (${typeof metric.evidence?.strategy === "string" ? metric.evidence.strategy : "lab"})`
+                      : "Google CrUX real-user data",
                 })),
                 recommendations: googleRecommendationData,
               }}
@@ -155,85 +180,46 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
             CrUX field data is unavailable for this page or origin; lab results are shown below.
           </p>
         ) : null}
+        {pageSpeedWarning ? (
+          <p className="mt-3 text-sm text-amber-400" role="status">
+            {pageSpeedWarning}
+          </p>
+        ) : null}
         <PageSpeedScoreChart data={lighthouseScoreData} />
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs text-[var(--muted-foreground)]">
-              <tr>
-                <th className="py-1">Category</th>
-                <th className="py-1">Mobile</th>
-                <th className="py-1">Desktop</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lighthouseCategories.map((category) => (
-                <tr key={category.id} className="border-t border-[var(--border-subtle)]">
-                  <td className="py-2">{category.label}</td>
-                  {(["mobile", "desktop"] as const).map((strategy) => {
-                    const score = metrics.find(
-                      (metric) => metric.metricKey === `psi_${strategy}_${category.id}_score`,
-                    );
-                    return (
-                      <td key={strategy} className="mono py-2">
-                        {score?.numericValue !== null && score ? `${score.numericValue} / 100` : "—"}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs text-[var(--muted-foreground)]">
-              <tr>
-                <th className="py-1">Metric</th>
-                <th className="py-1">Value</th>
-                <th className="py-1">Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {googleReportMetrics.map((metric) => (
-                <tr key={metric.id} className="border-t border-[var(--border-subtle)]">
-                  <td className="py-1">{metric.metricLabel}</td>
-                  <td className="mono py-1">{metricValue(metric)}</td>
-                  <td className="py-1 text-[var(--muted-foreground)]">{metricSource(metric)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!googleReportMetrics.length ? <p className="mt-3 text-sm text-[var(--muted-foreground)]">No Google metrics were collected.</p> : null}
+        <PageSpeedDeviceTabs
+          scores={lighthouseScoreData}
+          metrics={deviceMetrics}
+          recommendations={googleRecommendationData}
+          domain={audit[0].domain}
+        />
+        {fieldMetricRows.length ? (
+          <div className="mt-6 border-t border-[var(--border-subtle)] pt-4">
+            <h3 className="text-sm font-semibold">Real-user data (CrUX)</h3>
+            <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+              Based on real visits over the last 28 days; this data is shared across device tabs.
+            </p>
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="text-xs text-[var(--muted-foreground)]">
+                  <tr>
+                    <th className="py-1">Metric</th>
+                    <th className="py-1">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fieldMetricRows.map((metric) => (
+                    <tr key={metric.id} className="border-t border-[var(--border-subtle)]">
+                      <td className="py-2">{metric.label}</td>
+                      <td className="mono py-2">{metric.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
       </Card>
 
-      <Card>
-        <h2 className="text-base font-semibold">Google Lighthouse issues and recommendations</h2>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-          Failed Lighthouse audits and Google’s guidance for improving them, shown separately for each device.
-        </p>
-        <div className="mt-4 space-y-3">
-          {googleRecommendationData.map((recommendation, index) => (
-            <article key={`${recommendation.strategy}-${recommendation.category}-${recommendation.title}-${index}`} className="border-t border-[var(--border-subtle)] pt-3">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <h3 className="text-sm font-semibold">{recommendation.title}</h3>
-                <span className="mono text-xs text-[var(--muted-foreground)]">
-                  {recommendation.category} · {recommendation.strategy} · {recommendation.score ?? "—"}/100
-                </span>
-              </div>
-              {recommendation.displayValue ? (
-                <p className="mt-1 text-sm">Measured: {recommendation.displayValue}</p>
-              ) : null}
-              <p className="mt-2 text-sm text-[var(--muted-foreground)]">{recommendation.recommendation}</p>
-            </article>
-          ))}
-          {!googleRecommendationData.length ? (
-            <p className="text-sm text-[var(--muted-foreground)]">
-              No Lighthouse recommendations are saved yet. Missing Google results are refreshed automatically.
-            </p>
-          ) : null}
-        </div>
-      </Card>
     </div>
   );
 }

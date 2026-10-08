@@ -11,8 +11,11 @@ type LighthouseAudit = {
   title?: string;
   description?: string;
   details?: {
+    type?: string;
     overallSavingsMs?: number;
     overallSavingsBytes?: number;
+    headings?: Array<{ key?: string; label?: string }>;
+    items?: unknown[];
   };
 };
 
@@ -57,10 +60,13 @@ export const PAGESPEED_SCORE_KEYS = LIGHTHOUSE_CATEGORIES.flatMap((category) =>
   (["mobile", "desktop"] as const).map((strategy) => `psi_${strategy}_${category.id}_score`),
 );
 export const PAGESPEED_COMPLETION_KEYS = [
-  ...PAGESPEED_SCORE_KEYS,
   "psi_mobile_scan_complete",
   "psi_desktop_scan_complete",
+  "psi_mobile_diagnostics_complete",
+  "psi_desktop_diagnostics_complete",
 ];
+
+const MAX_DIAGNOSTIC_DETAILS_LENGTH = 8000;
 
 const LAB_METRICS = [
   { id: "first-contentful-paint", key: "fcp", label: "First Contentful Paint", unit: "ms", good: 1800, poor: 3000 },
@@ -168,6 +174,7 @@ async function runStrategy(url: string, strategy: Strategy) {
           displayValue: recommendation.audit.displayValue,
           overallSavingsMs: recommendation.audit.details?.overallSavingsMs,
           overallSavingsBytes: recommendation.audit.details?.overallSavingsBytes,
+          diagnosticDetails: serializeDiagnosticDetails(recommendation.audit.details),
         },
       });
     }
@@ -202,7 +209,30 @@ async function runStrategy(url: string, strategy: Strategy) {
     evidence,
   });
 
+  metrics.push({
+    category: "performance",
+    metricKey: `psi_${strategy}_diagnostics_complete`,
+    metricLabel: `Google Lighthouse ${strategy} diagnostics complete`,
+    numericValue: 1,
+    unit: "",
+    status: "info",
+    source: "pagespeed-lab",
+    evidence,
+  });
+
   return { strategy, result, metrics };
+}
+
+function serializeDiagnosticDetails(details: LighthouseAudit["details"]): string | undefined {
+  if (!details || (!details.headings?.length && !details.items?.length)) return undefined;
+
+  const serialized = JSON.stringify(
+    { type: details.type, headings: details.headings, items: details.items },
+    null,
+    2,
+  );
+  if (serialized.length <= MAX_DIAGNOSTIC_DETAILS_LENGTH) return serialized;
+  return `${serialized.slice(0, MAX_DIAGNOSTIC_DETAILS_LENGTH)}\n... details truncated`;
 }
 
 function hasFieldMetrics(data: PageSpeedResponse["loadingExperience"]) {

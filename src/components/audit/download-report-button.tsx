@@ -27,6 +27,8 @@ type ReportData = {
     score: number | null;
     displayValue: string;
     recommendation: string;
+    finalHost: string | null;
+    diagnosticDetails: string | null;
   }>;
 };
 
@@ -95,8 +97,14 @@ export function DownloadReportButton({ report }: { report: ReportData }) {
       if (report.recommendations.length) {
         report.recommendations.forEach((item, index) => {
           addText(`${index + 1}. ${item.title} (${item.category}, ${item.strategy})`, 10, 2);
+          if (item.finalHost && item.finalHost !== report.domain) {
+            addText(`Lighthouse followed a redirect and analyzed ${item.finalHost}.`, 9, 2);
+          }
           addText(`Audit score: ${item.score ?? "-"}/100${item.displayValue ? ` | ${item.displayValue}` : ""}`, 9, 2);
           addText(item.recommendation, 9, 8);
+          if (item.diagnosticDetails) {
+            addText(`Diagnostic details:\n${item.diagnosticDetails}`, 8, 8);
+          }
         });
       } else {
         addText("No failed Lighthouse recommendations were returned.", 10, 6);
